@@ -11,11 +11,15 @@ RUN npm run build
 
 # Docker file for nginx server to serve react app build files (spa routing)
 FROM nginx:alpine
+# Copy build files from the previous stage
 COPY --from=build /app/dist /usr/share/nginx/html
-# This is required to make nginx serve index.html for all routes
+# Copy nginx configuration
 COPY nginx.conf /etc/nginx/conf.d/default.conf 
+# Copy a script to replace environment variables in env-config.js
+COPY entrypoint.sh /usr/share/nginx/entrypoint.sh
+# Make the script executable
+RUN chmod +x /usr/share/nginx/entrypoint.sh
+# Expose port 80
 EXPOSE 80
-# If you add a custom CMD in the Dockerfile, be sure to include -g daemon off; 
-# in the CMD in order for nginx to stay in the foreground, so that Docker can 
-# track the process properly (otherwise your container will stop immediately after starting)!
-CMD ["nginx", "-g", "daemon off;"]
+# Start Nginx and keep it running in the foreground
+CMD ["/bin/sh", "/usr/share/nginx/entrypoint.sh"]
